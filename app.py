@@ -40,7 +40,7 @@ def add_record():
             return jsonify({"error": "Missing required fields"}), 400
 
         # Insert into Supabase
-        supabase.table(TABLE_NAME).insert({
+        response = supabase.table(TABLE_NAME).insert({
             "userID": data["userID"],
             "date": data["date"],  # expect YYYY-MM-DD
             "category": data["category"].strip().title(),
@@ -49,6 +49,7 @@ def add_record():
             "notes": data.get("notes", "").strip()
         }).execute()
 
+        print("✅ Supabase insert response:", response)  # log Supabase response
         return jsonify({"message": "Record added successfully!"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
