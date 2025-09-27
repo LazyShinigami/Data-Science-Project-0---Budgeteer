@@ -96,7 +96,7 @@ def summary():
             "total_spent": total_spent,
             "total_by_category": total_by_category,
             "daily_avg": daily_avg,
-            "records_count": len(expenses)
+            "records_count": len(expenses),
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -150,6 +150,9 @@ def trend():
             df.groupby('date')['amount'].sum().nlargest(3).to_dict()
         )
 
+        #total spend
+        total_spent = df["amount"].sum()
+
         return jsonify({
             "columns": columns,
             "columns_on_each_date": columns_on_each_date,
@@ -157,6 +160,7 @@ def trend():
             "category_wise_average": category_avg,
             "three_highest_spends": top3Transactions,
             "three_highest_dates": top3Dates,
+            "total_spent": total_spent,
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
