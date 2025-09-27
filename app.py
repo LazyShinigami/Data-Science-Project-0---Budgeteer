@@ -84,9 +84,8 @@ def summary():
         total_spent = df["amount"].sum()
 
         # --- Total by category ---
-        total_by_category = (
-            df.groupby("category")["amount"].sum().to_dict()
-        )
+        total_by_category = df.groupby("category")["amount"].sum().to_dict()
+        
 
         # --- Daily average ---
         unique_dates = df["date"].nunique()
@@ -130,25 +129,18 @@ def trend():
         columns = sorted(everyday_total.keys())
         columns_on_each_date = [everyday_total[d] for d in columns]
         
-        # average daily spend on category
-        category_avg = (
-            df.groupby("category")["amount"]
-            .mean()
-            .round(2)
-            .to_dict()
-        )
-        
+        # total spend per category
+        category_total = df.groupby('category')['amount'].sum().to_dict()
+        # average spend on category
+        category_avg =df.groupby("category")["amount"].mean().round(2).to_dict()
+         
         # Three records of transactions where the amount is the largest {amount: abc, category: def, date: ghi}
-        top3Transactions = (
-            df.nlargest(3, "amount")[["category", "date", "amount"]]
+        top3Transactions = (df.nlargest(3, "amount")[["category", "date", "amount"]].to_dict(orient="records")
             #nlargest basically takes the records of the largest < 3 > values present in the < amount column >
-            .to_dict(orient="records")
         )
 
         # Three records of transactions where the total spend is the largest {amount: abc, date: def}
-        top3Dates = (
-            df.groupby('date')['amount'].sum().nlargest(3).to_dict()
-        )
+        top3Dates = df.groupby('date')['amount'].sum().nlargest(3).to_dict()
 
         #total spend
         total_spent = df["amount"].sum()
@@ -157,6 +149,7 @@ def trend():
             "columns": columns,
             "columns_on_each_date": columns_on_each_date,
             "records_count": len(expenses),
+            "category_wise_total": category_total,
             "category_wise_average": category_avg,
             "three_highest_spends": top3Transactions,
             "three_highest_dates": top3Dates,
