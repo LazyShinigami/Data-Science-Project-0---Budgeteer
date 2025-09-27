@@ -127,8 +127,8 @@ def trend():
 
         # daily trend
         everyday_total = df.groupby('date').sum().to_dict()
-        sorted_dates = sorted(everyday_total.keys())
-        amounts = [everyday_total[d] for d in sorted_dates]
+        columns = sorted(everyday_total.keys())
+        columns_on_each_date = [everyday_total[d] for d in columns]
         
         # average daily spend on category
         category_avg = (
@@ -147,8 +147,8 @@ def trend():
 
 
         return jsonify({
-            "dates": sorted_dates,
-            "amounts": amounts,
+            "columns": columns,
+            "columns_on_each_date": columns_on_each_date,
             "records_count": len(expenses),
             "category_wise_average": category_avg,
             "three_highest_spends": top3
