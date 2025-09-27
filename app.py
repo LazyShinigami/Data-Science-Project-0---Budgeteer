@@ -138,20 +138,25 @@ def trend():
             .to_dict()
         )
         
-        # Three RECORDS where the amount is the largest
-        top3 = (
+        # Three records of transactions where the amount is the largest {amount: abc, category: def, date: ghi}
+        top3Transactions = (
             df.nlargest(3, "amount")[["category", "date", "amount"]]
             #nlargest basically takes the records of the largest < 3 > values present in the < amount column >
             .to_dict(orient="records")
         )
 
+        # Three records of transactions where the total spend is the largest {amount: abc, date: def}
+        top3Dates = (
+            df.groupby('date')['amount'].sum().nlargest(3).to_dict()
+        )
 
         return jsonify({
             "columns": columns,
             "columns_on_each_date": columns_on_each_date,
             "records_count": len(expenses),
             "category_wise_average": category_avg,
-            "three_highest_spends": top3
+            "three_highest_spends": top3Transactions,
+            "three_highest_dates": top3Dates,
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
