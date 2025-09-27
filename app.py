@@ -4,6 +4,8 @@ from flask_cors import CORS
 from supabase import create_client
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
+import pandas as pd
+import numpy as np
 
 app = Flask(__name__)
 
@@ -74,15 +76,21 @@ def summary():
 
         expenses = query.execute().data or []
 
-        # Calculate summary
-        total_spent = sum(e["amount"] for e in expenses)
-        total_by_category = {}
-        for e in expenses:
-            cat = e["category"]
-            total_by_category[cat] = total_by_category.get(cat, 0) + e["amount"]
+        # converting received data to dataframe
+        df = pd.DataFrame(expenses)
+        df["amount"] = df["amount"].astype(float)
 
-        dates = set(e["date"] for e in expenses)
-        daily_avg = total_spent / len(dates) if dates else 0
+        # --- Total spent ---
+        total_spent = df["amount"].sum()
+
+        # --- Total by category ---
+        total_by_category = (
+            df.groupby("category")["amount"].sum().to_dict()
+        )
+
+        # --- Daily average ---
+        unique_dates = df["date"].nunique()
+        daily_avg = (total_spent / unique_dates) if unique_dates > 0 else 0
 
         return jsonify({
             "total_spent": total_spent,
@@ -110,23 +118,46 @@ def trend():
 
         expenses = query.execute().data or []
 
-        trend_data = {}
-        for e in expenses:
-            trend_data[e["date"]] = trend_data.get(e["date"], 0) + e["amount"]
 
-        sorted_dates = sorted(trend_data.keys())
-        amounts = [trend_data[d] for d in sorted_dates]
+        # converting received data to dataframe
+        df = pd.DataFrame(expenses)
+        
+        # making sure amount is in float
+        df['amount']= df['amount'].astype(float)
+
+        # daily trend
+        everyday_total = df.groupby('date').sum().to_dict()
+        sorted_dates = sorted(everyday_total.keys())
+        amounts = [everyday_total[d] for d in sorted_dates]
+        
+        # average daily spend on category
+        category_avg = (
+            df.groupby("category")["amount"]
+            .mean()
+            .round(2)
+            .to_dict()
+        )
+        
+        # Three RECORDS where the amount is the largest
+        top3 = (
+            df.nlargest(3, "amount")[["category", "date", "amount"]]
+            #nlargest basically takes the records of the largest < 3 > values present in the < amount column >
+            .to_dict(orient="records")
+        )
+
 
         return jsonify({
             "dates": sorted_dates,
             "amounts": amounts,
-            "records_count": len(expenses)
+            "records_count": len(expenses),
+            "category_wise_average": category_avg,
+            "three_highest_spends": top3
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 # ===== Prediction =====
-@app.route("/prediction", methods=["GET"])
+@app.route("/prediction", methods=["GET"]) 
 def prediction():
     try:
         user_id = request.args.get("user_id")
