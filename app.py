@@ -339,6 +339,9 @@ def prediction():
 
         if not user_id:
             return jsonify({"error": "user_id parameter is required"}), 400
+        
+        if not prediction_period:
+            return jsonify({"error": "prediciton_period parameter is required"}), 400
 
         # Fetch expenses from Supabase
         query = supabase.table(TABLE_NAME).select("*").eq("userID", user_id)
@@ -367,8 +370,12 @@ def prediction():
         # Detect whether forecast has "ds" (Prophet) or "date" (ARIMA / Linear Regression)
         date_col = "ds" if "ds" in forecast.columns else "date"
         forecast = (
-            forecast.assign(**{date_col: pd.to_datetime(forecast[date_col]).dt.strftime("%Y-%m-%d")})
-                    .to_dict("records")
+            forecast.assign(
+                **{date_col: pd.to_datetime(forecast[date_col]).dt.strftime("%Y-%m-%d")},
+                lower=forecast.get("lower", pd.Series(dtype=float)).round(2),
+                upper=forecast.get("upper", pd.Series(dtype=float)).round(2),
+                predicted=forecast.get("predicted", pd.Series(dtype=float)).round(2),
+            ).to_dict("records")
         )
 
         # Format response
